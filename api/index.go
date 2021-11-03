@@ -15,10 +15,15 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 }
 
 func Screenshot(urlstr string) []byte {
+	opts := []chromedp.ExecAllocatorOption{
+		chromedp.ExecPath("/headless-shell/headless-shell"),
+	}
+	allocCtx, cancel := chromedp.NewExecAllocator(context.Background(), opts...)
+	defer cancel()
+
 	// create context
 	ctx, cancel := chromedp.NewContext(
-		context.Background(),
-		// chromedp.WithDebugf(log.Printf),
+		allocCtx,
 	)
 	defer cancel()
 
@@ -29,9 +34,6 @@ func Screenshot(urlstr string) []byte {
 	if err := chromedp.Run(ctx, fullScreenshot(urlstr, 90, &buf)); err != nil {
 		log.Fatal(err)
 	}
-	// if err := ioutil.WriteFile("fullScreenshot.png", buf, 0o644); err != nil {
-	// 	log.Fatal(err)
-	// }
 
 	log.Printf("wrote elementScreenshot.png and fullScreenshot.png")
 
