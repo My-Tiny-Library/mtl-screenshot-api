@@ -1,4 +1,4 @@
-package handler
+package main
 
 import (
 	"context"
@@ -9,9 +9,13 @@ import (
 	"github.com/chromedp/chromedp"
 )
 
-func Handler(w http.ResponseWriter, r *http.Request) {
-	var buf = string(Screenshot(r.URL.Query().Get("url")))
-	fmt.Fprintf(w, buf)
+func handler(w http.ResponseWriter, r *http.Request) {
+	var fileBytes = Screenshot(r.URL.Query().Get("url"))
+
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/octet-stream")
+	w.Write(fileBytes)
+	return
 }
 
 func Screenshot(urlstr string) []byte {
@@ -30,8 +34,6 @@ func Screenshot(urlstr string) []byte {
 		log.Fatal(err)
 	}
 
-	log.Printf("wrote elementScreenshot.png and fullScreenshot.png")
-
 	return buf
 }
 
@@ -42,5 +44,15 @@ func fullScreenshot(urlstr string, quality int, res *[]byte) chromedp.Tasks {
 		chromedp.Navigate(urlstr),
 		chromedp.EmulateViewport(1200, 630),
 		chromedp.FullScreenshot(res, quality),
+	}
+}
+
+func main() {
+	port := ":3000"
+
+	http.HandleFunc("/api/screenshot", handler)
+	fmt.Println("Listening in port " + port)
+	if err := http.ListenAndServe(port, nil); err != nil {
+		panic(err)
 	}
 }
