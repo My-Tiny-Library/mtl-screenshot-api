@@ -30,7 +30,7 @@ func Screenshot(urlstr string) []byte {
 	var buf []byte
 
 	// capture entire browser viewport, returning png with quality=90
-	if err := chromedp.Run(ctx, fullScreenshot(urlstr, 90, &buf)); err != nil {
+	if err := chromedp.Run(ctx, fullScreenshot(urlstr, 100, &buf)); err != nil {
 		log.Fatal(err)
 	}
 
