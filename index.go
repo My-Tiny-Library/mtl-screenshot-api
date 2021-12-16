@@ -42,7 +42,7 @@ func Screenshot(urlstr string) []byte {
 func fullScreenshot(urlstr string, quality int, res *[]byte) chromedp.Tasks {
 	return chromedp.Tasks{
 		chromedp.Navigate(urlstr),
-		chromedp.EmulateViewport(1200, 630),
+		chromedp.EmulateViewport(1200, 630, chromedp.EmulateScale(2)),
 		chromedp.WaitVisible(`#logo`, chromedp.ByID),
 		chromedp.FullScreenshot(res, quality),
 	}
