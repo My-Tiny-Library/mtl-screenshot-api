@@ -10,6 +10,7 @@ import (
 )
 
 func handler(w http.ResponseWriter, r *http.Request) {
+	println(r.URL.Query().Get("url"))
 	var fileBytes = Screenshot(r.URL.Query().Get("url"))
 
 	w.WriteHeader(http.StatusOK)
@@ -42,7 +43,8 @@ func Screenshot(urlstr string) []byte {
 func fullScreenshot(urlstr string, quality int, res *[]byte) chromedp.Tasks {
 	return chromedp.Tasks{
 		chromedp.Navigate(urlstr),
-		chromedp.EmulateViewport(1200, 630, chromedp.EmulateScale(2)),
+		//chromedp.EmulateScale(2)
+		chromedp.EmulateViewport(1200, 630),
 		chromedp.WaitVisible(`#logo`, chromedp.ByID),
 		chromedp.FullScreenshot(res, quality),
 	}
