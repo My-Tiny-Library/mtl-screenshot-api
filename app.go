@@ -5,13 +5,17 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/chromedp/chromedp"
 )
 
 func handler(w http.ResponseWriter, r *http.Request) {
-	println(r.URL.Query().Get("url"))
-	var fileBytes = Screenshot(r.URL.Query().Get("url"))
+	var postId = r.URL.Query().Get("id")
+	println(postId)
+	var url = "https://www.mytinylibrary.com/p/" + postId + "/preview"
+	println(url)
+	var fileBytes = Screenshot(url)
 
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/octet-stream")
@@ -38,23 +42,33 @@ func Screenshot(urlstr string) []byte {
 	return buf
 }
 
-// fullScreenshot takes a screenshot of the entire browser viewport.
-// Note: chromedp.FullScreenshot overrides the device's emulation settings. Reset
 func fullScreenshot(urlstr string, quality int, res *[]byte) chromedp.Tasks {
+	println(urlstr)
+	println(quality)
+	println(res)
 	return chromedp.Tasks{
 		chromedp.Navigate(urlstr),
 		//chromedp.EmulateScale(2)
-		chromedp.EmulateViewport(1200, 630),
+		chromedp.EmulateViewport(1200, 630, chromedp.EmulateScale(2)),
 		chromedp.WaitVisible(`#logo`, chromedp.ByID),
 		chromedp.FullScreenshot(res, quality),
 	}
 }
 
+func sayHi(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "This is MTL Screenshot API\n")
+}
+
 func main() {
-	port := ":3000"
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
 
 	http.HandleFunc("/api/screenshot", handler)
-	fmt.Println("Listening in port " + port)
+	http.HandleFunc("/", sayHi)
+	log.Println("listening on", port)
+	log.Fatal(http.ListenAndServe(":"+port, nil))
 	if err := http.ListenAndServe(port, nil); err != nil {
 		panic(err)
 	}

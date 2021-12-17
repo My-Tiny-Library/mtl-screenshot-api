@@ -1,35 +1,34 @@
-FROM golang:latest as build
+# Compile app binary
+FROM golang:latest as build-env
 
-# Set necessary environmet variables needed for our image
-ENV GO111MODULE=on \
-    CGO_ENABLED=0 \
-    GOOS=linux \
-    GOARCH=amd64
+ENV GO111MODULE=on
 
-# Move to working directory /build
-WORKDIR /build
+WORKDIR /go/src
+COPY app.go app.go
+COPY go.mod go.mod
+COPY go.sum go.sum
 
-# Copy and download dependency using go mod
-COPY go.mod .
-COPY go.sum .
-RUN go mod download
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -installsuffix cgo -o /app
 
-# Copy the code into the container
-COPY . .
-
-# Build the application
-RUN go build -o main .
-
-FROM chromedp/headless-shell:latest
-
+FROM arunvelsriram/utils
+USER root
+RUN apt upgrade -y
+RUN apt-get install curl gnupg debian-keyring debian-archive-keyring -y
+RUN apt-get install bc -y
+RUN apt-get install sudo -y
+RUN curl -fsSL https://github.com/rabbitmq/signing-keys/releases/download/2.0/rabbitmq-release-signing-key.asc | apt-key add -
+RUN apt-key adv --keyserver "keyserver.ubuntu.com" --recv-keys "F77F1EDA57EBB1CC"
+RUN apt-get install apt-transport-https
+RUN echo "deb http://ppa.launchpad.net/rabbitmq/rabbitmq-erlang/ubuntu bionic main" > /etc/apt/sources.list.d/bintray.rabbitmq.list
+RUN echo "deb-src http://ppa.launchpad.net/rabbitmq/rabbitmq-erlang/ubuntu bionic main" >> /etc/apt/sources.list.d/bintray.rabbitmq.list
 RUN apt-get update
-RUN apt-get install tini -y
 
-WORKDIR /dist
-COPY --from=build /build/main /dist/main
+RUN DEBIAN_FRONTEND="noninteractive" apt-get -y install tzdata
 
-ENTRYPOINT ["tini", "--"]
+RUN wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+RUN dpkg -i google-chrome-stable_current_amd64.deb; apt-get -fy install
 
-EXPOSE 3000
+COPY --from=build-env /app /app
 
-CMD ["/dist/main"]
+
+CMD ["/app"]
